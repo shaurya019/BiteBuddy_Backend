@@ -1,6 +1,6 @@
 import { plainToClass } from 'class-transformer';
 import { Request, Response, NextFunction } from 'express';
-import { CreateCustomerInput, EditCustomerProfileInput, OrderInputs, UserLoginInput } from '../dto/Customer.dto';
+import { CartItem, CreateCustomerInput, EditCustomerProfileInput, OrderInputs, UserLoginInput } from '../dto/Customer.dto';
 import { validate } from 'class-validator';
 import { GeneratePassword, GenerateSalt, GenerateSignature, ValidatePassword } from '../utility';
 import { Customer } from '../models/Customer';
@@ -214,7 +214,7 @@ export const CreateOrder = async (req: Request, res: Response, next: NextFunctio
 
         let netAmount = 0.0;
 
-        const foods = await Food.find().where('_id').in(cart.map(item => item._id)).exec();
+        const foods = await Food.find().where('_id').in(cart.map((item: { _id: any; }) => item._id)).exec();
 
         foods.forEach(food => {
             cart.forEach(({ _id, unit }) => {
@@ -224,7 +224,7 @@ export const CreateOrder = async (req: Request, res: Response, next: NextFunctio
                 }
             });
         });
-        
+
 
         if (cartItems) {
 
@@ -280,4 +280,84 @@ export const GetOrderById = async (req: Request, res: Response, next: NextFuncti
     }
 
     return res.status(400).json({ msg: 'Order not found' });
+}
+
+
+
+export const AddToCart = async (req: Request, res: Response, next: NextFunction) => {
+
+    const customer = req.user;
+
+    if (customer) {
+        const profile = await Customer.findById(customer._id);
+        let cartItems = Array();
+
+        const { _id, unit } = <CartItem>req.body;
+
+        const food = await Food.findById(_id);
+
+        if (food) {
+            if (profile !== null) {
+                cartItems = profile.cart;
+                if (cartItems.length > 0) {
+                    let existFoodItems =cartItems.filter((x) => x.food._id === _id);
+                    if (existFoodItems.length > 0) {
+                        const index = cartItems.indexOf(existFoodItems[0]);
+
+                        if (unit > 0) {
+                            cartItems[index] = { food, unit };
+                        } else {
+                            cartItems.slice(index, 1);
+                        }
+                    } else {
+                        cartItems.push({ food, unit}) 
+                    }
+                }
+                if(cartItems){
+                    profile.cart = cartItems as any;
+                    const cartResult = await profile.save();
+                    return res.status(200).json(cartResult.cart);
+                }
+
+            }
+        }
+
+        
+    }
+
+    return res.status(404).json({ msg: 'Unable to add to cart!'});
+
+}
+
+export const GetCart = async (req: Request, res: Response, next: NextFunction) => {
+    const customer = req.user;
+
+    if (customer) {
+        const profile = await Customer.findById(customer._id);
+
+        if (profile) {
+            return res.status(200).json(profile.cart);
+        }
+
+    }
+
+    return res.status(400).json({ message: 'Cart is Empty!' })
+}
+
+export const DeleteCart = async (req: Request, res: Response, next: NextFunction) => {
+
+    const customer = req.user;
+    if (customer) {
+        const profile = await Customer.findById(customer._id);
+
+        if (profile) {
+            profile.cart = [] as any;
+            const cartResult = await profile.save();
+
+            return res.status(200).json(cartResult);
+        }
+
+
+    }
+    return res.status(400).json({message: 'cart is Already Empty!'})
 }

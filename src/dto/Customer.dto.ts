@@ -39,6 +39,11 @@ export interface CustomerPayload {
 
 export class OrderInputs {
     [x: string]: any;
+    _id: any;
+    unit: any;
+}
+
+export class CartItem {
     _id: string;
     unit: number;
 }

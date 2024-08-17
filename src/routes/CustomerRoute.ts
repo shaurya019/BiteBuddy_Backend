@@ -1,5 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
-import { CustomerLogin, CustomerSignUp, CustomerVerify, EditCustomerProfile, GetCustomerProfile, RequestOtp,CreateOrder ,GetOrders,GetOrderById} from '../controllers';
+import { CustomerLogin, CustomerSignUp, CustomerVerify, EditCustomerProfile, GetCustomerProfile, RequestOtp,CreateOrder ,GetOrders,GetOrderById,AddToCart,GetCart,DeleteCart} from '../controllers';
 import { Authenticate } from '../middleware';
 // import { Offer } from '../models/Offer';
 
@@ -21,9 +21,13 @@ router.patch('/verify', CustomerVerify)
 
 router.get('/otp', RequestOtp)
 
-
 router.get('/profile', GetCustomerProfile)
 router.patch('/profile', EditCustomerProfile)
+
+router.post('/cart', AddToCart)
+router.get('/cart', GetCart)
+router.delete('/cart', DeleteCart)
+
 
 router.post('/create-order', CreateOrder);
 router.get('/orders', GetOrders);
